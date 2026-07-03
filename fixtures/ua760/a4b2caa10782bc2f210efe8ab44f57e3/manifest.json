@@ -627,5 +627,171 @@
         }
       ]
     }
+  ],
+  "structures": [
+    {
+      "id": "https://media.archives.albany.edu/ua760/a4b2caa10782bc2f210efe8ab44f57e3/range/toc",
+      "type": "Range",
+      "behavior": [
+        "top"
+      ],
+      "label": {
+        "en": [
+          "Table of Contents"
+        ]
+      },
+      "items": [
+        {
+          "id": "https://media.archives.albany.edu/ua760/a4b2caa10782bc2f210efe8ab44f57e3/range/toc/1",
+          "type": "Range",
+          "label": {
+            "en": [
+              "College of Education, Albany, New York, Sept. 12, 1961"
+            ]
+          },
+          "items": [
+            {
+              "id": "https://media.archives.albany.edu/ua760/a4b2caa10782bc2f210efe8ab44f57e3/canvas/p1",
+              "type": "Canvas"
+            }
+          ]
+        },
+        {
+          "id": "https://media.archives.albany.edu/ua760/a4b2caa10782bc2f210efe8ab44f57e3/range/toc/2",
+          "type": "Range",
+          "label": {
+            "en": [
+              "Institute, Add 1"
+            ]
+          },
+          "items": [
+            {
+              "id": "https://media.archives.albany.edu/ua760/a4b2caa10782bc2f210efe8ab44f57e3/canvas/p2",
+              "type": "Canvas"
+            }
+          ]
+        },
+        {
+          "id": "https://media.archives.albany.edu/ua760/a4b2caa10782bc2f210efe8ab44f57e3/range/toc/3",
+          "type": "Range",
+          "label": {
+            "en": [
+              "EVENT: ALL COLLEGE CONVOCATION UNDER THE DIRECTION OF THE STUDENT BODY PRESIDENT,"
+            ]
+          },
+          "items": [
+            {
+              "id": "https://media.archives.albany.edu/ua760/a4b2caa10782bc2f210efe8ab44f57e3/canvas/p3",
+              "type": "Canvas"
+            }
+          ]
+        },
+        {
+          "id": "https://media.archives.albany.edu/ua760/a4b2caa10782bc2f210efe8ab44f57e3/range/toc/4",
+          "type": "Range",
+          "label": {
+            "en": [
+              "INTER-OFFICE MEMO"
+            ]
+          },
+          "items": [
+            {
+              "id": "https://media.archives.albany.edu/ua760/a4b2caa10782bc2f210efe8ab44f57e3/canvas/p4",
+              "type": "Canvas"
+            },
+            {
+              "id": "https://media.archives.albany.edu/ua760/a4b2caa10782bc2f210efe8ab44f57e3/range/toc/5",
+              "type": "Range",
+              "label": {
+                "en": [
+                  "TO: Frank Carrino"
+                ]
+              },
+              "items": [
+                {
+                  "id": "https://media.archives.albany.edu/ua760/a4b2caa10782bc2f210efe8ab44f57e3/canvas/p4",
+                  "type": "Canvas"
+                }
+              ]
+            },
+            {
+              "id": "https://media.archives.albany.edu/ua760/a4b2caa10782bc2f210efe8ab44f57e3/range/toc/6",
+              "type": "Range",
+              "label": {
+                "en": [
+                  "FROM: Donald S. Allen, Chairman DATE, 9/26/61 \""
+                ]
+              },
+              "items": [
+                {
+                  "id": "https://media.archives.albany.edu/ua760/a4b2caa10782bc2f210efe8ab44f57e3/canvas/p4",
+                  "type": "Canvas"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "https://media.archives.albany.edu/ua760/a4b2caa10782bc2f210efe8ab44f57e3/range/toc/7",
+          "type": "Range",
+          "label": {
+            "en": [
+              "OFFICE OF THE PRESIDENT"
+            ]
+          },
+          "items": [
+            {
+              "id": "https://media.archives.albany.edu/ua760/a4b2caa10782bc2f210efe8ab44f57e3/canvas/p5",
+              "type": "Canvas"
+            }
+          ]
+        },
+        {
+          "id": "https://media.archives.albany.edu/ua760/a4b2caa10782bc2f210efe8ab44f57e3/range/toc/8",
+          "type": "Range",
+          "label": {
+            "en": [
+              "COLLEGE OF EDUCATION AT ALBANY"
+            ]
+          },
+          "items": [
+            {
+              "id": "https://media.archives.albany.edu/ua760/a4b2caa10782bc2f210efe8ab44f57e3/canvas/p7",
+              "type": "Canvas"
+            }
+          ]
+        },
+        {
+          "id": "https://media.archives.albany.edu/ua760/a4b2caa10782bc2f210efe8ab44f57e3/range/toc/9",
+          "type": "Range",
+          "label": {
+            "en": [
+              "College of Education et Albany"
+            ]
+          },
+          "items": [
+            {
+              "id": "https://media.archives.albany.edu/ua760/a4b2caa10782bc2f210efe8ab44f57e3/canvas/p8",
+              "type": "Canvas"
+            }
+          ]
+        },
+        {
+          "id": "https://media.archives.albany.edu/ua760/a4b2caa10782bc2f210efe8ab44f57e3/range/toc/10",
+          "type": "Range",
+          "label": {
+            "en": [
+              "TO: Greenville Local"
+            ]
+          },
+          "items": [
+            {
+              "id": "https://media.archives.albany.edu/ua760/a4b2caa10782bc2f210efe8ab44f57e3/canvas/p9",
+              "type": "Canvas"
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

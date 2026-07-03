@@ -16,6 +16,11 @@ def main():
         default=25.0,
         help="Maximum age of manifest in hours before regenerating (default: 25)",
     )
+    parser.add_argument(
+        "--toc",
+        action="store_true",
+        help="Include IIIF table of contents from content.md headings when available.",
+    )
 
     args = parser.parse_args()
 
@@ -39,4 +44,4 @@ def main():
 
             if should_create and os.path.isfile(metadata_path):
                 print(f"Creating manifest for {object_id}")
-                create_manifest(collection.id, object_id)
+                create_manifest(collection.id, object_id, toc=args.toc)

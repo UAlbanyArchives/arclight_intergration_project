@@ -417,5 +417,201 @@
         }
       ]
     }
+  ],
+  "structures": [
+    {
+      "id": "https://media.archives.albany.edu/ua200/fd198d1a2ebfdddad630c9698a38df29/range/toc",
+      "type": "Range",
+      "behavior": [
+        "top"
+      ],
+      "label": {
+        "en": [
+          "Table of Contents"
+        ]
+      },
+      "items": [
+        {
+          "id": "https://media.archives.albany.edu/ua200/fd198d1a2ebfdddad630c9698a38df29/range/toc/1",
+          "type": "Range",
+          "label": {
+            "en": [
+              "May 15, 2006 - Meeting Agenda"
+            ]
+          },
+          "items": [
+            {
+              "id": "https://media.archives.albany.edu/ua200/fd198d1a2ebfdddad630c9698a38df29/canvas/p1",
+              "type": "Canvas"
+            },
+            {
+              "id": "https://media.archives.albany.edu/ua200/fd198d1a2ebfdddad630c9698a38df29/range/toc/2",
+              "type": "Range",
+              "label": {
+                "en": [
+                  "Approval of  Minutes of April 24, 2006"
+                ]
+              },
+              "items": [
+                {
+                  "id": "https://media.archives.albany.edu/ua200/fd198d1a2ebfdddad630c9698a38df29/canvas/p1",
+                  "type": "Canvas"
+                }
+              ]
+            },
+            {
+              "id": "https://media.archives.albany.edu/ua200/fd198d1a2ebfdddad630c9698a38df29/range/toc/3",
+              "type": "Range",
+              "label": {
+                "en": [
+                  "President\u2019s Report"
+                ]
+              },
+              "items": [
+                {
+                  "id": "https://media.archives.albany.edu/ua200/fd198d1a2ebfdddad630c9698a38df29/canvas/p1",
+                  "type": "Canvas"
+                }
+              ]
+            },
+            {
+              "id": "https://media.archives.albany.edu/ua200/fd198d1a2ebfdddad630c9698a38df29/range/toc/4",
+              "type": "Range",
+              "label": {
+                "en": [
+                  "SUNY-wide Faculty Senate Report"
+                ]
+              },
+              "items": [
+                {
+                  "id": "https://media.archives.albany.edu/ua200/fd198d1a2ebfdddad630c9698a38df29/canvas/p1",
+                  "type": "Canvas"
+                }
+              ]
+            },
+            {
+              "id": "https://media.archives.albany.edu/ua200/fd198d1a2ebfdddad630c9698a38df29/range/toc/5",
+              "type": "Range",
+              "label": {
+                "en": [
+                  "Chair\u2019s Report"
+                ]
+              },
+              "items": [
+                {
+                  "id": "https://media.archives.albany.edu/ua200/fd198d1a2ebfdddad630c9698a38df29/canvas/p1",
+                  "type": "Canvas"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "https://media.archives.albany.edu/ua200/fd198d1a2ebfdddad630c9698a38df29/range/toc/6",
+          "type": "Range",
+          "label": {
+            "en": [
+              "Council Reports"
+            ]
+          },
+          "items": [
+            {
+              "id": "https://media.archives.albany.edu/ua200/fd198d1a2ebfdddad630c9698a38df29/canvas/p2",
+              "type": "Canvas"
+            }
+          ]
+        },
+        {
+          "id": "https://media.archives.albany.edu/ua200/fd198d1a2ebfdddad630c9698a38df29/range/toc/7",
+          "type": "Range",
+          "label": {
+            "en": [
+              "Committee Reports"
+            ]
+          },
+          "items": [
+            {
+              "id": "https://media.archives.albany.edu/ua200/fd198d1a2ebfdddad630c9698a38df29/canvas/p3",
+              "type": "Canvas"
+            }
+          ]
+        },
+        {
+          "id": "https://media.archives.albany.edu/ua200/fd198d1a2ebfdddad630c9698a38df29/range/toc/8",
+          "type": "Range",
+          "label": {
+            "en": [
+              "New Business"
+            ]
+          },
+          "items": [
+            {
+              "id": "https://media.archives.albany.edu/ua200/fd198d1a2ebfdddad630c9698a38df29/canvas/p4",
+              "type": "Canvas"
+            },
+            {
+              "id": "https://media.archives.albany.edu/ua200/fd198d1a2ebfdddad630c9698a38df29/range/toc/9",
+              "type": "Range",
+              "label": {
+                "en": [
+                  "Bill No.  0506-23 - GAC:  Proposed Changes to Doctoral"
+                ]
+              },
+              "items": [
+                {
+                  "id": "https://media.archives.albany.edu/ua200/fd198d1a2ebfdddad630c9698a38df29/canvas/p4",
+                  "type": "Canvas"
+                }
+              ]
+            },
+            {
+              "id": "https://media.archives.albany.edu/ua200/fd198d1a2ebfdddad630c9698a38df29/range/toc/10",
+              "type": "Range",
+              "label": {
+                "en": [
+                  "Research Tool Policy"
+                ]
+              },
+              "items": [
+                {
+                  "id": "https://media.archives.albany.edu/ua200/fd198d1a2ebfdddad630c9698a38df29/canvas/p4",
+                  "type": "Canvas"
+                }
+              ]
+            },
+            {
+              "id": "https://media.archives.albany.edu/ua200/fd198d1a2ebfdddad630c9698a38df29/range/toc/11",
+              "type": "Range",
+              "label": {
+                "en": [
+                  "Bill No.  0506-24 - COR:  Proposal for \u201cExempt\u201d Category"
+                ]
+              },
+              "items": [
+                {
+                  "id": "https://media.archives.albany.edu/ua200/fd198d1a2ebfdddad630c9698a38df29/canvas/p4",
+                  "type": "Canvas"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "https://media.archives.albany.edu/ua200/fd198d1a2ebfdddad630c9698a38df29/range/toc/12",
+          "type": "Range",
+          "label": {
+            "en": [
+              "Adjourn"
+            ]
+          },
+          "items": [
+            {
+              "id": "https://media.archives.albany.edu/ua200/fd198d1a2ebfdddad630c9698a38df29/canvas/p5",
+              "type": "Canvas"
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

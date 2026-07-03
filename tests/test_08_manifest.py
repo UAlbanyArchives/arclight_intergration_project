@@ -1,6 +1,5 @@
 import os
 import json
-import filecmp
 import difflib
 import yaml
 from iiiflow import create_manifest
@@ -10,7 +9,7 @@ config_path = "./.iiiflow.yml"
 discovery_storage_root, log_file_path = load_config(config_path)
 
 
-def _generate_manifest(tmp_path, collection_id, object_id, config_overrides=None):
+def _generate_manifest(tmp_path, collection_id, object_id, config_overrides=None, create_manifest_kwargs=None):
     """Generate a manifest for one fixture object in an isolated temp copy and return parsed JSON."""
     temp_discovery_storage_root, temp_config_path = create_temp_fixture_config(tmp_path, config_path)
 
@@ -30,7 +29,8 @@ def _generate_manifest(tmp_path, collection_id, object_id, config_overrides=None
     if os.path.isfile(manifest_path):
         os.remove(manifest_path)
 
-    create_manifest(collection_id, object_id, config_path=temp_config_path)
+    create_manifest_kwargs = create_manifest_kwargs or {}
+    create_manifest(collection_id, object_id, config_path=temp_config_path, **create_manifest_kwargs)
 
     assert os.path.isfile(manifest_path), f"manifest.json was not created for {collection_id}/{object_id}"
     assert os.path.getsize(manifest_path) > 0, f"Generated manifest is empty for {collection_id}/{object_id}"
@@ -64,7 +64,7 @@ def test_manifest(tmp_path):
             if os.path.isfile(manifest_path):
                 os.remove(manifest_path)
 
-            create_manifest(collection_id, object_id, config_path=temp_config_path)
+            create_manifest(collection_id, object_id, config_path=temp_config_path, toc=True)
 
             assert os.path.isfile(manifest_path), f"manifest.json was not created for {collection_id}/{object_id}"
             os.makedirs(os.path.dirname(canonical_manifest_path), exist_ok=True)
@@ -81,17 +81,21 @@ def test_manifest(tmp_path):
         if os.path.isfile(manifest_path):
             os.remove(manifest_path)
 
-        create_manifest(collection_id, object_id, config_path=temp_config_path)
+        create_manifest(collection_id, object_id, config_path=temp_config_path, toc=True)
 
         # Check the generated manifest.
         assert os.path.isfile(manifest_path), "manifest.json was not created."
         assert os.path.getsize(manifest_path) > 0, f"Manifest {manifest_path} is empty."
 
-        # Compare the generated manifest to the canonical fixture version.
-        if not filecmp.cmp(manifest_path, canonical_manifest_path, shallow=False):
-            with open(manifest_path, "r", encoding="utf-8") as f1, open(canonical_manifest_path, "r", encoding="utf-8") as f2:
-                manifest1 = json.dumps(json.load(f1), indent=2, sort_keys=True).splitlines()
-                manifest2 = json.dumps(json.load(f2), indent=2, sort_keys=True).splitlines()
+        # Compare generated and canonical manifests semantically to avoid false negatives
+        # from formatting-only differences (for example, trailing newline presence).
+        with open(manifest_path, "r", encoding="utf-8") as f1, open(canonical_manifest_path, "r", encoding="utf-8") as f2:
+            generated_manifest_data = json.load(f1)
+            canonical_manifest_data = json.load(f2)
+
+        if generated_manifest_data != canonical_manifest_data:
+            manifest1 = json.dumps(generated_manifest_data, indent=2, sort_keys=True).splitlines()
+            manifest2 = json.dumps(canonical_manifest_data, indent=2, sort_keys=True).splitlines()
 
             diff = "\n".join(difflib.unified_diff(manifest1, manifest2, fromfile="new_manifest", tofile="canonical_manifest", lineterm=""))
 
@@ -286,3 +290,114 @@ def test_manifest_web_archive_resource_type_is_case_insensitive(tmp_path):
 
     assert manifest.get("items"), "Expected canvases generated for lowercase web archive resource_type."
     assert "replayweb.page" in manifest["items"][0]["items"][0]["items"][0]["body"].get("id", "")
+
+
+def _range_label(range_item):
+    label = range_item.get("label", {})
+    if isinstance(label, dict):
+        for values in label.values():
+            if isinstance(values, list) and values:
+                return values[0]
+            if isinstance(values, str):
+                return values
+    return None
+
+
+def _collect_heading_canvas_pairs(ranges):
+    pairs = {}
+
+    def walk(range_item):
+        if range_item.get("type") != "Range":
+            return
+
+        label = _range_label(range_item)
+        canvas_id = None
+        for item in range_item.get("items", []):
+            if isinstance(item, dict) and item.get("type") == "Canvas":
+                canvas_id = item.get("id")
+                break
+
+        if label and canvas_id:
+            pairs[label] = canvas_id
+
+        for item in range_item.get("items", []):
+            if isinstance(item, dict) and item.get("type") == "Range":
+                walk(item)
+
+    for structure in ranges:
+        walk(structure)
+
+    return pairs
+
+
+def _canvas_file_by_canvas_id(manifest):
+    mapping = {}
+    for canvas in manifest.get("items", []):
+        label = canvas.get("label", {})
+        filename = None
+
+        if isinstance(label, dict):
+            for values in label.values():
+                if isinstance(values, list) and values:
+                    filename = values[0]
+                    break
+                if isinstance(values, str):
+                    filename = values
+                    break
+        elif isinstance(label, str):
+            filename = label
+
+        if filename and canvas.get("id"):
+            mapping[canvas["id"]] = filename
+
+    return mapping
+
+
+def _filename_stem(filename):
+    return os.path.splitext(os.path.basename(filename))[0].casefold()
+
+
+def test_manifest_toc_disabled_by_default(tmp_path):
+    manifest = _generate_manifest(tmp_path, "ua200", "fd198d1a2ebfdddad630c9698a38df29")
+
+    assert "structures" not in manifest, "TOC should be opt-in and absent unless toc=True."
+
+
+def test_manifest_toc_uses_content_markers_for_ua200(tmp_path):
+    manifest = _generate_manifest(
+        tmp_path,
+        "ua200",
+        "fd198d1a2ebfdddad630c9698a38df29",
+        create_manifest_kwargs={"toc": True},
+    )
+
+    assert manifest.get("structures"), "Expected IIIF structures when toc=True and content.md exists."
+
+    heading_to_canvas = _collect_heading_canvas_pairs(manifest["structures"])
+    canvas_to_file = _canvas_file_by_canvas_id(manifest)
+
+    assert _filename_stem(canvas_to_file[heading_to_canvas["May 15, 2006 - Meeting Agenda"]]) == "fd198d1a2ebfdddad630c9698a38df29-1"
+    assert _filename_stem(canvas_to_file[heading_to_canvas["Council Reports"]]) == "fd198d1a2ebfdddad630c9698a38df29-2"
+    assert _filename_stem(canvas_to_file[heading_to_canvas["Committee Reports"]]) == "fd198d1a2ebfdddad630c9698a38df29-3"
+    assert _filename_stem(canvas_to_file[heading_to_canvas["New Business"]]) == "fd198d1a2ebfdddad630c9698a38df29-4"
+    assert _filename_stem(canvas_to_file[heading_to_canvas["Adjourn"]]) == "fd198d1a2ebfdddad630c9698a38df29-5"
+
+
+def test_manifest_toc_uses_content_markers_for_ua760(tmp_path):
+    manifest = _generate_manifest(
+        tmp_path,
+        "ua760",
+        "a4b2caa10782bc2f210efe8ab44f57e3",
+        create_manifest_kwargs={"toc": True},
+    )
+
+    assert manifest.get("structures"), "Expected IIIF structures when toc=True and content.md exists."
+
+    heading_to_canvas = _collect_heading_canvas_pairs(manifest["structures"])
+    canvas_to_file = _canvas_file_by_canvas_id(manifest)
+
+    assert _filename_stem(canvas_to_file[heading_to_canvas["College of Education, Albany, New York, Sept. 12, 1961"]]) == "1961-09-1"
+    assert _filename_stem(canvas_to_file[heading_to_canvas["Institute, Add 1"]]) == "1961-09-2"
+    assert _filename_stem(canvas_to_file[heading_to_canvas["INTER-OFFICE MEMO"]]) == "1961-09-4"
+    assert _filename_stem(canvas_to_file[heading_to_canvas["COLLEGE OF EDUCATION AT ALBANY"]]) == "1961-09-7"
+    assert _filename_stem(canvas_to_file[heading_to_canvas["TO: Greenville Local"]]) == "1961-09-9"

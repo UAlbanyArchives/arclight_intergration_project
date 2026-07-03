@@ -1,6 +1,7 @@
 import os
 import yaml
 import json
+import re
 from iiif_prezi3 import config
 from .utils import validate_config_and_paths, remove_nulls
 from .manifest_builders import (
@@ -22,7 +23,119 @@ def create_iiif_manifest(*args, **kwargs):
     return _create_iiif_manifest(*args, **kwargs)
 
 
-def create_manifest(collection_id, object_id, config_path="~/.iiiflow.yml"):
+def _canvas_id_by_filename(manifest_dict):
+    canvas_ids = {}
+
+    def register_alias(name, canvas_id):
+        if not isinstance(name, str):
+            return
+
+        normalized = os.path.basename(name.strip()).lower()
+        if not normalized:
+            return
+
+        canvas_ids.setdefault(normalized, canvas_id)
+        stem, _ext = os.path.splitext(normalized)
+        if stem:
+            canvas_ids.setdefault(stem, canvas_id)
+
+    for canvas in manifest_dict.get("items", []):
+        canvas_id = canvas.get("id")
+        if not canvas_id:
+            continue
+
+        label = canvas.get("label")
+        if isinstance(label, str):
+            register_alias(label, canvas_id)
+            continue
+
+        if not isinstance(label, dict):
+            continue
+
+        for label_values in label.values():
+            if isinstance(label_values, list):
+                for value in label_values:
+                    if isinstance(value, str):
+                        register_alias(value, canvas_id)
+            elif isinstance(label_values, str):
+                register_alias(label_values, canvas_id)
+
+    return canvas_ids
+
+
+def _build_toc_structures(object_path, obj_url_root, manifest_dict, lang_code):
+    content_path = os.path.join(object_path, "content.md")
+    if not os.path.isfile(content_path):
+        return None
+
+    filename_to_canvas = _canvas_id_by_filename(manifest_dict)
+
+    with open(content_path, "r", encoding="utf-8") as content_file:
+        content_lines = content_file.readlines()
+
+    file_marker_pattern = re.compile(r"^\s*<!--\s*file:\s*([^>]+?)\s*-->\s*$")
+    heading_pattern = re.compile(r"^\s*(#{1,6})\s+(.+?)\s*$")
+
+    top_range = {
+        "id": f"{obj_url_root}/range/toc",
+        "type": "Range",
+        "behavior": ["top"],
+        "label": {lang_code: ["Table of Contents"]},
+        "items": [],
+    }
+
+    current_file = None
+    range_counter = 0
+    # Track open heading levels to preserve Markdown heading hierarchy.
+    range_stack = [{"level": 0, "range": top_range}]
+
+    for raw_line in content_lines:
+        file_match = file_marker_pattern.match(raw_line)
+        if file_match:
+            current_file = file_match.group(1).strip()
+            continue
+
+        heading_match = heading_pattern.match(raw_line)
+        if not heading_match or not current_file:
+            continue
+
+        marker = os.path.basename(current_file.strip()).lower()
+        marker_stem, _marker_ext = os.path.splitext(marker)
+        canvas_id = filename_to_canvas.get(marker) or filename_to_canvas.get(marker_stem)
+        if not canvas_id:
+            continue
+
+        heading_level = len(heading_match.group(1))
+        heading_text = heading_match.group(2).strip()
+        if not heading_text:
+            continue
+
+        range_counter += 1
+        heading_range = {
+            "id": f"{obj_url_root}/range/toc/{range_counter}",
+            "type": "Range",
+            "label": {lang_code: [heading_text]},
+            "items": [
+                {
+                    "id": canvas_id,
+                    "type": "Canvas",
+                }
+            ],
+        }
+
+        while range_stack and range_stack[-1]["level"] >= heading_level:
+            range_stack.pop()
+
+        range_stack[-1]["range"]["items"].append(heading_range)
+        range_stack.append({"level": heading_level, "range": heading_range})
+
+    if not top_range["items"]:
+        return None
+
+    return [top_range]
+
+
+def create_manifest(collection_id, object_id, config_path="~/.iiiflow.yml", toc=False):
     """
     Creates a manifest.json compliant with the IIIF v3 Presentation API
     Designed to be used with the discovery storage specification.
@@ -98,6 +211,11 @@ def create_manifest(collection_id, object_id, config_path="~/.iiiflow.yml"):
             "provider": provider_data,
             **manifest_dict
         }
+
+        if toc:
+            structures = _build_toc_structures(object_path, obj_url_root, manifest_dict, lang_code)
+            if structures:
+                manifest_output["structures"] = structures
 
         with open(manifest_path, "w") as file_handle:
             json.dump(manifest_output, file_handle, indent=2)
