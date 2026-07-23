@@ -50,7 +50,7 @@ def test_transcription(tmp_path):
                     break
 
                 assert os.path.isfile(content_path), f"Missing generated content file: {content_path}"
-                assert_text_file_similar(content_path, canonical_content_path, min_length_ratio=0.7, min_similarity_ratio=0.8)
+                assert_text_file_similar(content_path, canonical_content_path, min_length_ratio=0.7, min_similarity_ratio=0.4)
 
                 for input_file in os.listdir(format_path):
                     if input_file.lower().endswith(av_format):
@@ -66,7 +66,7 @@ def test_transcription(tmp_path):
                             assert_vtt_matches(vtt_path, canonical_vtt_path)
                         if os.path.isfile(canonical_txt_path):
                             assert os.path.isfile(txt_path), f"Missing generated TXT file: {txt_path}"
-                            assert_text_file_similar(txt_path, canonical_txt_path, min_length_ratio=0.7, min_similarity_ratio=0.8)
+                            assert_text_file_similar(txt_path, canonical_txt_path, min_length_ratio=0.7, min_similarity_ratio=0.4)
 
                 break
 

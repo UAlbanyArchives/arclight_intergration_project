@@ -120,6 +120,7 @@ def make_thumbnail(collection_id, object_id, config_path="~/.iiiflow.yml"):
     print(f"Creating thumbnail for {object_path}...")
 
     try:
+        thumbnail_created = False
 
         metadata_path = os.path.join(object_path, "metadata.yml")
         if not os.path.isfile(metadata_path):
@@ -129,16 +130,19 @@ def make_thumbnail(collection_id, object_id, config_path="~/.iiiflow.yml"):
                 metadata = yaml.safe_load(metadata_file)
                 if metadata["resource_type"] == "Audio":
                     get_audio_thumbnail(audio_thumbnail_file, thumbnail_path)
+                    thumbnail_created = os.path.isfile(thumbnail_path)
                 elif metadata["resource_type"] == "Video":
-                    format_order = ["webm", "mp4", "mpeg", "mov", "avi"]
+                    format_order = ["webm", "mp4", "mpeg", "mov", "avi", "ogg", "mp3"]
                     for format_ext in format_order:
                         video_dir = os.path.join(object_path, format_ext)
                         if os.path.isdir(video_dir) and len(os.listdir(video_dir)) > 0:
                             video_path = os.path.join(video_dir, os.listdir(video_dir)[0])
                             create_video_thumbnail(video_path, thumbnail_path)
+                            if os.path.isfile(thumbnail_path):
+                                thumbnail_created = True
+                                break
                 else:
                     image_order = ["jpg", "jpeg", "png"]
-                    thumbnail_created = False
                     for format_ext in image_order:
                         image_dir = os.path.join(object_path, format_ext)
                         if os.path.isdir(image_dir) and len(os.listdir(image_dir)) > 0:

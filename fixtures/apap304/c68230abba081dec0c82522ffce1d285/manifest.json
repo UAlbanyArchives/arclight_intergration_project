@@ -34,7 +34,7 @@
       },
       "value": {
         "en": [
-          "Video"
+          "Audio"
         ]
       }
     },
@@ -115,6 +115,8 @@
         {
           "id": "https://media.archives.albany.edu/apap304/c68230abba081dec0c82522ffce1d285/thumbnail.jpg",
           "type": "Image",
+          "height": 442,
+          "width": 442,
           "format": "image/jpeg"
         }
       ],

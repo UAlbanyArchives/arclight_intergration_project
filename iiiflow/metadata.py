@@ -104,7 +104,6 @@ def validate_metadata(collection_id, object_id, config_path="~/.iiiflow.yml"):
         return False
 
     required_keys = [
-        "preservation_package",
         "resource_type",
         "license",
         "date_uploaded"
@@ -118,6 +117,13 @@ def validate_metadata(collection_id, object_id, config_path="~/.iiiflow.yml"):
             raise TypeError(f"The value for key '{key}' must be a string, got {type(value).__name__}.")
         if len(value) < min_length:
             raise ValueError(f"The value for key '{key}' must be at least {min_length} characters long.")
+
+    if "preservation_package" in metadata:
+        value = metadata["preservation_package"]
+        if not isinstance(value, str):
+            raise TypeError(f"The value for key 'preservation_package' must be a string, got {type(value).__name__}.")
+        if len(value) < min_length:
+            raise ValueError("The value for key 'preservation_package' must be at least 1 characters long.")
     
     controlled_fields = {
         "coverage": ["whole", "part"],

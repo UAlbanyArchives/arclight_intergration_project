@@ -6,6 +6,8 @@ import zipfile
 import urllib.parse
 import yaml
 import traceback
+from PIL import Image
+from PIL import ImageOps
 from subprocess import Popen, PIPE
 from bs4 import BeautifulSoup
 from warcio.archiveiterator import ArchiveIterator
@@ -14,6 +16,29 @@ from .utils import validate_config_and_paths
 
 ALLOWED_AUTOMATED_TEXT_TOOLS = {"tesseract"}
 HTML_MIME_TYPES = ("text/html", "application/xhtml", "application/xhtml+xml")
+
+
+def _prepare_image_for_ocr(img_path, temp_dir):
+    """
+    Normalize source images to an OCR-safe JPEG input.
+    """
+    os.makedirs(temp_dir, exist_ok=True)
+    base_name = os.path.splitext(os.path.basename(img_path))[0]
+    normalized_path = os.path.join(temp_dir, f"{base_name}_ocr.jpg")
+
+    with Image.open(img_path) as img:
+        img = ImageOps.exif_transpose(img)
+        if img.mode != "RGB":
+            img = img.convert("RGB")
+        img.save(normalized_path, format="JPEG", quality=90)
+
+    return normalized_path
+
+
+def _run_tesseract_ocr(tesseract_cmd):
+    process = Popen(tesseract_cmd, stdout=PIPE, stderr=PIPE)
+    stdout, stderr = process.communicate()
+    return process.returncode, stdout, stderr
 
 
 def _normalize_page_url(url):
@@ -240,6 +265,9 @@ def create_hocr(collection_id, object_id, config_path="~/.iiiflow.yml"):
 
         # Aggregate all text files into a single content.txt file
         content_file_path = os.path.join(object_path, "content.txt")
+        temp_ocr_dir = os.path.join(object_path, "_tmp_ocr")
+        temp_normalized_inputs = []
+        failed_pages = []
         with open(content_file_path, "w", encoding="utf-8") as content_file:
             for filename in sorted(os.listdir(img_dir)):
                 if filename.lower().endswith((".jpg", ".jpeg", ".png", ".tif")):
@@ -261,16 +289,54 @@ def create_hocr(collection_id, object_id, config_path="~/.iiiflow.yml"):
                     generated_txt_path = hocr_filepath + ".txt"
                     
                     try:
-                        process = Popen(tesseract_cmd, stdout=PIPE, stderr=PIPE)
-                        stdout, stderr = process.communicate()
-                        if process.returncode != 0:
-                            raise RuntimeError(f"{stdout.decode('utf-8')}\n{stderr.decode('utf-8')}")
+                        # First try OCR on the original input to preserve canonical text similarity.
+                        returncode, stdout, stderr = _run_tesseract_ocr(tesseract_cmd)
+                        used_input_path = img_filepath
+
+                        # If the original input fails, retry once with a normalized JPEG.
+                        if returncode != 0:
+                            normalized_input_path = _prepare_image_for_ocr(img_filepath, temp_ocr_dir)
+                            temp_normalized_inputs.append(normalized_input_path)
+                            tesseract_cmd[1] = normalized_input_path
+                            returncode, stdout, stderr = _run_tesseract_ocr(tesseract_cmd)
+                            used_input_path = normalized_input_path
+
+                        if returncode != 0:
+                            stdout_text = stdout.decode("utf-8", errors="replace")
+                            stderr_text = stderr.decode("utf-8", errors="replace")
+                            message = (
+                                f"Tesseract OCR failed for {filename}. Continuing to next image.\n"
+                                f"Command: {' '.join(tesseract_cmd)}\n"
+                                f"Return code: {returncode}\n"
+                                f"Input image: {used_input_path}\n"
+                                f"Output base: {hocr_filepath}\n"
+                                f"STDOUT: {stdout_text}\n"
+                                f"STDERR: {stderr_text}"
+                            )
+                            print(message)
+                            failed_pages.append(filename)
+                            if used_input_path in temp_normalized_inputs:
+                                temp_normalized_inputs.remove(used_input_path)
+                            with open(log_file_path, "a", encoding="utf-8") as log:
+                                log.write("\n" + message + "\n")
+                            continue
 
                         # Move the generated .txt file to the txt directory
                         if not os.path.isfile(generated_txt_path):
-                            raise ValueError(f"No .txt output in {generated_txt_path}.")
+                            message = (
+                                f"Tesseract OCR produced no text output for {filename}. Continuing to next image.\n"
+                                f"Expected TXT path: {generated_txt_path}\n"
+                                f"Input image: {used_input_path}"
+                            )
+                            print(message)
+                            failed_pages.append(filename)
+                            if used_input_path in temp_normalized_inputs:
+                                temp_normalized_inputs.remove(used_input_path)
+                            with open(log_file_path, "a", encoding="utf-8") as log:
+                                log.write("\n" + message + "\n")
+                            continue
                         else:
-                            os.rename(generated_txt_path, txt_filepath)
+                            os.replace(generated_txt_path, txt_filepath)
 
                         # Append text content to content.txt
                         if os.path.isfile(txt_filepath):
@@ -278,10 +344,26 @@ def create_hocr(collection_id, object_id, config_path="~/.iiiflow.yml"):
                                 content_file.write(txt_file.read())
                                 content_file.write("\n")
 
+                        if used_input_path in temp_normalized_inputs:
+                            temp_normalized_inputs.remove(used_input_path)
+                            os.remove(used_input_path)
+
                     except Exception as e:
-                        with open(log_file_path, "a") as log:
+                        failed_pages.append(filename)
+                        print(f"Unexpected OCR error for {filename}. Continuing to next image. See log: {log_file_path}")
+                        with open(log_file_path, "a", encoding="utf-8") as log:
                             log.write(f"\nERROR processing {img_filepath} with Tesseract:\n")
                             log.write(traceback.format_exc())
+
+        if failed_pages:
+            print(f"OCR failed for {len(failed_pages)} page(s): {failed_pages}")
+
+        for temp_path in temp_normalized_inputs:
+            if os.path.isfile(temp_path):
+                os.remove(temp_path)
+
+        if os.path.isdir(temp_ocr_dir) and not os.listdir(temp_ocr_dir):
+            os.rmdir(temp_ocr_dir)
 
     print(f"Completed processing for collection {collection_id}.")
 

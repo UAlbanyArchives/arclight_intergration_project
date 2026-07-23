@@ -33,9 +33,9 @@ def resize_image(img_path, max_size=1500):
         img = ImageOps.exif_transpose(img)
         img.thumbnail((max_size, max_size), Image.LANCZOS)
 
-        # Convert PNG to JPEG to reduce size
-        if ext == ".png" or img.mode in ("RGBA", "LA", "P"):
-            img = img.convert("RGB")  # Convert to RGB since JPEG doesn't support alpha transparency
+        # Normalize every image to RGB before JPEG export for OCR stability.
+        if img.mode != "RGB":
+            img = img.convert("RGB")
 
         img.save(resized_img_path, format="JPEG", quality=85)  # Save with reduced quality to further reduce size
 
@@ -98,6 +98,7 @@ def create_pdf(collection_id, object_id, config_path="~/.iiiflow.yml"):
     )
 
     temp_resized_files = []  # Store resized images for cleanup
+    failed_pages = []
 
     for img in image_files:
         print(f"\tConverting {img} to searchable PDF...")
@@ -108,18 +109,39 @@ def create_pdf(collection_id, object_id, config_path="~/.iiiflow.yml"):
         temp_resized_files.append(resized_img_path)  # Store for cleanup
 
         # Generate a searchable PDF from the image using Tesseract
-        temp_pdf_path = os.path.join(pdf_path, f"{img[:-4]}.pdf")
-        tesseract_cmd = ["tesseract", resized_img_path, temp_pdf_path[:-4], "pdf"]
+        img_stem, _ = os.path.splitext(img)
+        temp_pdf_path = os.path.join(pdf_path, f"{img_stem}.pdf")
+        tesseract_output_base = os.path.splitext(temp_pdf_path)[0]
+        tesseract_cmd = ["tesseract", resized_img_path, tesseract_output_base, "pdf"]
         
         process = Popen(tesseract_cmd, stdout=PIPE, stderr=PIPE)
         stdout, stderr = process.communicate()
 
         if process.returncode != 0:
-            print(f"Tesseract OCR failed for {img}:\nSTDOUT: {stdout.decode('utf-8')}\nSTDERR: {stderr.decode('utf-8')}")
-            raise RuntimeError(f"OCR processing failed for {img}.")
+            stdout_text = stdout.decode("utf-8", errors="replace")
+            stderr_text = stderr.decode("utf-8", errors="replace")
+            print(
+                f"Tesseract OCR failed for {img}. Continuing to next image.\n"
+                f"Command: {' '.join(tesseract_cmd)}\n"
+                f"Return code: {process.returncode}\n"
+                f"Input image: {resized_img_path}\n"
+                f"Output base: {tesseract_output_base}\n"
+                f"STDOUT: {stdout_text}\n"
+                f"STDERR: {stderr_text}"
+            )
+            failed_pages.append(img)
+            if resized_img_path in temp_resized_files:
+                temp_resized_files.remove(resized_img_path)
+            continue
 
         # Append the individual searchable PDF to the list
         pdf_files_to_merge.append(temp_pdf_path)
+
+    if failed_pages:
+        print(f"OCR failed for {len(failed_pages)} page(s): {failed_pages}")
+
+    if not pdf_files_to_merge:
+        raise RuntimeError("OCR processing failed for all images; no PDF pages were generated.")
 
     # Merge all the individual PDFs into one
     final_pdf_path = os.path.join(pdf_path, "binder.pdf")
