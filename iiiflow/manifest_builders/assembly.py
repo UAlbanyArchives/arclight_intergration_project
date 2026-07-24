@@ -41,7 +41,7 @@ def create_iiif_manifest(
     manifest = update_metadata_fields(manifest, metadata, lang_code)
     normalized_resource_type = (resource_type or "").strip().casefold()
 
-    if normalized_resource_type == "web archive":
+    if normalized_resource_type in {"web archive", "email"}:
         create_web_archive_canvases(manifest, file_dir, obj_url_root, thumbnail_data, lang_code, metadata)
     else:
         page_count = 0
@@ -67,7 +67,11 @@ def create_iiif_manifest(
                     lang_code=lang_code,
                 )
             elif resource_file.lower().endswith(resource_format.lower()):
-                img_width, img_height = get_image_dimensions(resource_path)
+                try:
+                    img_width, img_height = get_image_dimensions(resource_path)
+                except Exception as exc:
+                    print(f"Skipping missing image {resource_path}: {exc}")
+                    continue
                 image_url = f"{iiif_url_root}%2F{quoted_file}"
                 create_iiif_canvas(
                     manifest,

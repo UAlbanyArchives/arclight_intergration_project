@@ -1,6 +1,7 @@
 import os
 import yaml
 
+from iiiflow.manifest_builders.assembly import create_iiif_manifest as build_iiif_manifest
 from iiiflow.manifest_builders.policies import (
     build_manifest_label,
     build_rights_and_attribution,
@@ -114,3 +115,42 @@ def test_attach_search_service_uses_real_hocr_fixture_and_config(tmp_path):
     assert hasattr(manifest, "service")
     assert manifest.service[0]["type"] == "SearchService"
     assert manifest.service[0]["id"] == "https://media.archives.albany.edu/search/1/ua200/fd198d1a2ebfdddad630c9698a38df29"
+
+
+def test_create_iiif_manifest_treats_email_archive_as_web_archive(tmp_path, monkeypatch):
+    file_dir = tmp_path / "warc.gz"
+    file_dir.mkdir()
+    (file_dir / "sample.warc.gz").write_bytes(b"not-an-image")
+
+    calls = {"web_archive": False}
+
+    def fake_create_web_archive_canvases(manifest, file_dir, obj_url_root, thumbnail_data, lang_code, metadata):
+        calls["web_archive"] = True
+
+    def fail_if_image_dimensions_are_requested(_path):
+        raise AssertionError("get_image_dimensions should not be called for email/web archive resources")
+
+    monkeypatch.setattr("iiiflow.manifest_builders.assembly.create_web_archive_canvases", fake_create_web_archive_canvases)
+    monkeypatch.setattr("iiiflow.manifest_builders.assembly.get_image_dimensions", fail_if_image_dimensions_are_requested)
+    monkeypatch.setattr("iiiflow.manifest_builders.assembly.append_manifest_renderings", lambda *args, **kwargs: None)
+    monkeypatch.setattr("iiiflow.manifest_builders.assembly.attach_search_service_if_configured", lambda *args, **kwargs: None)
+
+    manifest = build_iiif_manifest(
+        str(file_dir),
+        "https://media.archives.albany.edu",
+        "https://media.archives.albany.edu/ua399/92f346e094e15bfc24f540aa4a429ed4",
+        "https://iiif.archives.albany.edu/iiif/3/ua399/92f346e094e15bfc24f540aa4a429ed4",
+        "warc.gz",
+        "Web Archive",
+        {
+            "license": "Unknown",
+            "rights_statement": "https://rightsstatements.org/vocab/InC-EDU/1.0/",
+        },
+        {"url": "https://media.archives.albany.edu/ua399/92f346e094e15bfc24f540aa4a429ed4/thumbnail.jpg", "width": None, "height": None},
+        "email",
+        "en",
+        str(tmp_path / "config.yml"),
+    )
+
+    assert calls["web_archive"] is True
+    assert manifest is not None
