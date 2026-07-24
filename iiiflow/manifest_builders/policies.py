@@ -102,13 +102,17 @@ def resolve_resource_source(object_path, resource_type):
 
         return None, None
 
-    if normalized_resource_type == "web archive":
+    if normalized_resource_type in {"web archive", "email"}:
         wacz_path = os.path.join(object_path, "wacz")
         if os.path.isdir(wacz_path):
             return wacz_path, "wacz"
         warc_path = os.path.join(object_path, "warc.gz")
         if os.path.isdir(warc_path):
             return warc_path, "warc.gz"
+        # Email objects can also be represented as image derivatives.
+        jpg_path = os.path.join(object_path, "jpg")
+        if os.path.isdir(jpg_path):
+            return jpg_path, "jpg"
         return None, None
 
     ptif_path = os.path.join(object_path, "ptif")
